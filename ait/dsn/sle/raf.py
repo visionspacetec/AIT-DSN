@@ -29,6 +29,7 @@ import common
 import frames
 from ait.dsn.sle.pdu.raf import *
 from ait.dsn.sle.pdu import raf
+from util import print_dict
 
 
 class RAF(common.SLE):
@@ -163,11 +164,17 @@ class RAF(common.SLE):
             start_invoc['rafStartInvocation']['invokerCredentials']['unused'] = None
 
         start_invoc['rafStartInvocation']['invokeId'] = self.invoke_id
-        start_time = struct.pack('!HIH', (start_time - common.CCSDS_EPOCH).days, 0, 0)
-        stop_time = struct.pack('!HIH', (end_time - common.CCSDS_EPOCH).days, 0, 0)
 
-        start_invoc['rafStartInvocation']['startTime']['known']['ccsdsFormat'] = start_time
-        start_invoc['rafStartInvocation']['stopTime']['known']['ccsdsFormat'] = stop_time
+        if start_time is None and end_time is None:
+            start_invoc['rafStartInvocation']['startTime']['undefined'] = None
+            start_invoc['rafStartInvocation']['stopTime']['undefined'] = None
+
+        else:
+            start_time = struct.pack('!HIH', (start_time - common.CCSDS_EPOCH).days, 0, 0)
+            stop_time = struct.pack('!HIH', (end_time - common.CCSDS_EPOCH).days, 0, 0)
+            start_invoc['rafStartInvocation']['startTime']['known']['ccsdsFormat'] = start_time
+            start_invoc['rafStartInvocation']['stopTime']['known']['ccsdsFormat'] = stop_time
+
         start_invoc['rafStartInvocation']['requestedFrameQuality'] = frame_quality
 
         ait.core.log.info('Sending data start invocation ...')
@@ -315,6 +322,7 @@ class RAF(common.SLE):
     def _transfer_data_invoc_handler(self, pdu):
         ''''''
         frame = pdu.getComponent()
+        print(frame)
         if 'data' in frame and frame['data'].isValue:
             tm_data = frame['data'].asOctets()
         else:
@@ -326,8 +334,9 @@ class RAF(common.SLE):
             return
 
         tmf = frames.TMTransFrame(tm_data)
-        ait.core.log.info('Sending {} bytes to telemetry port'.format(len(tmf._data[0])))
-        self._telem_sock.sendto(tmf._data[0], ('localhost', 3076))
+        print_dict(tmf, True)
+        #ait.core.log.info('Sending {} bytes to telemetry port'.format(len(tmf._data[0])))
+        #self._telem_sock.sendto(tmf._data[0], ('localhost', 3076))
 
     def _sync_notify_handler(self, pdu):
         ''''''

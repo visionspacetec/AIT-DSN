@@ -31,6 +31,8 @@ import common
 import frames
 from ait.dsn.sle.pdu.rcf import *
 from ait.dsn.sle.pdu import rcf
+import pyasn1
+from util import print_dict
 
 
 class RCF(common.SLE):
@@ -180,7 +182,7 @@ class RCF(common.SLE):
                 False. Otherwise, master_channel should be True and
                 virtual_channel should be None.
         '''
-        if not master_channel and not virtual_channel:
+        if not master_channel and virtual_channel is None:
             err = (
                 'Transfer start invocation requires a master channel or '
                 'virtual channel from which to receive frames.'
@@ -212,11 +214,15 @@ class RCF(common.SLE):
             start_invoc['rcfStartInvocation']['invokerCredentials']['unused'] = None
 
         start_invoc['rcfStartInvocation']['invokeId'] = self.invoke_id
-        start_time = struct.pack('!HIH', (start_time - common.CCSDS_EPOCH).days, 0, 0)
-        stop_time = struct.pack('!HIH', (end_time - common.CCSDS_EPOCH).days, 0, 0)
 
-        start_invoc['rcfStartInvocation']['startTime']['known']['ccsdsFormat'] = start_time
-        start_invoc['rcfStartInvocation']['stopTime']['known']['ccsdsFormat'] = stop_time
+        if start_time is None and end_time is None:
+            start_invoc['rcfStartInvocation']['startTime']['undefined'] = None
+            start_invoc['rcfStartInvocation']['stopTime']['undefined'] = None
+        else:
+            start_time = struct.pack('!HIH', (start_time - common.CCSDS_EPOCH).days, 0, 0)
+            stop_time = struct.pack('!HIH', (end_time - common.CCSDS_EPOCH).days, 0, 0)
+            start_invoc['rcfStartInvocation']['startTime']['known']['ccsdsFormat'] = start_time
+            start_invoc['rcfStartInvocation']['stopTime']['known']['ccsdsFormat'] = stop_time
 
         req_gvcid = GvcId()
         req_gvcid['spacecraftId'] = spacecraft_id
@@ -361,6 +367,7 @@ class RCF(common.SLE):
     def _start_return_handler(self, pdu):
         ''''''
         result = pdu['rcfStartReturn']['result']
+        #print(pdu)
         if 'positiveResult' in result:
             ait.core.log.info('Start successful')
             self._state = 'active'
@@ -390,9 +397,10 @@ class RCF(common.SLE):
     def _transfer_data_invoc_handler(self, pdu):
         ''''''
         frame = pdu.getComponent()
+        print(frame)
         if 'data' in frame and frame['data'].isValue:
-            tm_data = frame['data'].asOctets()
-
+            #tm_data = frame['data'].asOctets()
+            tm_data = frame['data'].prettyPrint()[2:]
         else:
             err = (
                 'RcfTransferBuffer received but data cannot be located. '
@@ -402,8 +410,12 @@ class RCF(common.SLE):
             return
 
         tmf = frames.TMTransFrame(tm_data)
-        ait.core.log.info('Sending {} bytes to telemetry port'.format(len(tmf._data[0])))
-        self._telem_sock.sendto(tmf._data[0], ('localhost', 3076))
+        #print(frame['data'].prettyPrint()[2:])
+        #tmf = return_data()
+
+        print_dict(tmf, True)
+        #ait.core.log.info('Sending {} bytes to telemetry port'.format(len(tmf._data[0])))
+        #self._telem_sock.sendto(tmf._data[0], ('localhost', 3076))
 
     def _sync_notify_handler(self, pdu):
         ''''''
