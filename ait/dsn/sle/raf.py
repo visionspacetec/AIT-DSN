@@ -165,14 +165,16 @@ class RAF(common.SLE):
 
         start_invoc['rafStartInvocation']['invokeId'] = self.invoke_id
 
-        if start_time is None and end_time is None:
+        if start_time is None:
             start_invoc['rafStartInvocation']['startTime']['undefined'] = None
-            start_invoc['rafStartInvocation']['stopTime']['undefined'] = None
-
         else:
             start_time = struct.pack('!HIH', (start_time - common.CCSDS_EPOCH).days, 0, 0)
-            stop_time = struct.pack('!HIH', (end_time - common.CCSDS_EPOCH).days, 0, 0)
             start_invoc['rafStartInvocation']['startTime']['known']['ccsdsFormat'] = start_time
+
+        if end_time is None:
+            start_invoc['rafStartInvocation']['stopTime']['undefined'] = None
+        else:
+            stop_time = struct.pack('!HIH', (end_time - common.CCSDS_EPOCH).days, 0, 0)
             start_invoc['rafStartInvocation']['stopTime']['known']['ccsdsFormat'] = stop_time
 
         start_invoc['rafStartInvocation']['requestedFrameQuality'] = frame_quality
@@ -324,7 +326,7 @@ class RAF(common.SLE):
         frame = pdu.getComponent()
         print(frame)
         if 'data' in frame and frame['data'].isValue:
-            tm_data = frame['data'].asOctets()
+            tm_data = frame['data'].prettyPrint()[2:]
         else:
             err = (
                 'RafTransferBuffer received but data cannot be located. '

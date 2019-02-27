@@ -30,9 +30,8 @@ import ait.core.log
 import common
 import frames
 from ait.dsn.sle.pdu.rcf import *
-from ait.dsn.sle.pdu import rcf
-import pyasn1
 from util import print_dict
+from util import hexint
 
 
 class RCF(common.SLE):
@@ -215,13 +214,16 @@ class RCF(common.SLE):
 
         start_invoc['rcfStartInvocation']['invokeId'] = self.invoke_id
 
-        if start_time is None and end_time is None:
+        if start_time is None:
             start_invoc['rcfStartInvocation']['startTime']['undefined'] = None
-            start_invoc['rcfStartInvocation']['stopTime']['undefined'] = None
         else:
             start_time = struct.pack('!HIH', (start_time - common.CCSDS_EPOCH).days, 0, 0)
-            stop_time = struct.pack('!HIH', (end_time - common.CCSDS_EPOCH).days, 0, 0)
             start_invoc['rcfStartInvocation']['startTime']['known']['ccsdsFormat'] = start_time
+
+        if end_time is None:
+            start_invoc['rcfStartInvocation']['stopTime']['undefined'] = None
+        else:
+            stop_time = struct.pack('!HIH', (end_time - common.CCSDS_EPOCH).days, 0, 0)
             start_invoc['rcfStartInvocation']['stopTime']['known']['ccsdsFormat'] = stop_time
 
         req_gvcid = GvcId()
@@ -399,7 +401,6 @@ class RCF(common.SLE):
         frame = pdu.getComponent()
         print(frame)
         if 'data' in frame and frame['data'].isValue:
-            #tm_data = frame['data'].asOctets()
             tm_data = frame['data'].prettyPrint()[2:]
         else:
             err = (
@@ -410,9 +411,6 @@ class RCF(common.SLE):
             return
 
         tmf = frames.TMTransFrame(tm_data)
-        #print(frame['data'].prettyPrint()[2:])
-        #tmf = return_data()
-
         print_dict(tmf, True)
         #ait.core.log.info('Sending {} bytes to telemetry port'.format(len(tmf._data[0])))
         #self._telem_sock.sendto(tmf._data[0], ('localhost', 3076))

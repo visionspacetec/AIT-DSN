@@ -46,4 +46,4 @@ def print_dict(dictionary, add_dashes, print_data=False):
 
 
 def extract_header(data):
-    return
+    return format(int(data[:12], 16), '048b')

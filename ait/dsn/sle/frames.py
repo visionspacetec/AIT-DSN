@@ -14,6 +14,7 @@
 
 from util import *
 
+
 class TMTransFrame(dict):
     def __init__(self, data=None):
         super(TMTransFrame, self).__init__()
@@ -26,17 +27,18 @@ class TMTransFrame(dict):
 
     def decode(self, data):
         ''' Decode data as a TM Transfer Frame '''
-        self['version'] = hexint(data[0]) & 0xC0
-        self['spacecraft_id'] = hexint(data[0:2]) & 0x3FF0
-        self['virtual_channel_id'] = hexint(data[1]) & 0x0E
-        self['ocf_flag'] = hexint(data[1]) & 0x01
-        self['master_chan_frame_count'] = data[2]
-        self['virtual_chan_frame_count'] = data[3]
-        self['sec_header_flag'] = hexint(data[4:6]) & 0x8000
-        self['sync_flag'] = hexint(data[4:6]) & 0x4000
-        self['pkt_order_flag'] = hexint(data[4:6]) & 0x2000
-        self['seg_len_id'] = hexint(data[4:6]) & 0x1800
-        self['first_hdr_ptr'] = hexint(data[4:6]) & 0x07FF
+        header = extract_header(data)
+        self['version'] = '0b' + header[0:2]
+        self['spacecraft_id'] = hex(int(header[2:12], 2))
+        self['virtual_channel_id'] = int(header[12:15], 2)
+        self['ocf_flag'] = header[15:16] == '1'
+        self['master_chan_frame_count'] = int(header[16:24], 2)
+        self['virtual_chan_frame_count'] = int(header[24:32], 2)
+        self['sec_header_flag'] = header[32:33] == '1'
+        self['sync_flag'] = header[33:34] == '1'
+        self['pkt_order_flag'] = header[34:35] == '1'
+        self['seg_len_id'] = '0b' + header[35:37]
+        self['first_hdr_ptr'] = '0b' + header[37:]
 
         if self['first_hdr_ptr'] == b'11111111110':
             self.is_idle = True
