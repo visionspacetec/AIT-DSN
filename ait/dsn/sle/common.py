@@ -83,6 +83,7 @@ TML_CONTEXT_HEARTBEAT_TYPE = 0x03000000
 
 CCSDS_EPOCH = dt.datetime(1958, 1, 1)
 
+
 class SLE(object):
     ''' SLE interface "base" class
 
@@ -423,6 +424,7 @@ class SLE(object):
 
         return encode(isp1_creds)
 
+
 def conn_handler(handler):
     ''' Handler for processing data received from the DSN into PDUs'''
     hb_time = int(time.time())
@@ -486,5 +488,4 @@ def data_processor(handler):
         except TypeError as e:
             ait.core.log.error('Unable to decode PDU due to type error ...')
             continue
-
         handler._handle_pdu(decoded_pdu)

@@ -394,12 +394,13 @@ class RCF(common.SLE):
 
     def _data_transfer_handler(self, pdu):
         ''''''
-        self._handle_pdu(pdu['rcfTransferBuffer'][0])
+        for data in pdu['rcfTransferBuffer']:
+            self._handle_pdu(data)
 
     def _transfer_data_invoc_handler(self, pdu):
         ''''''
         frame = pdu.getComponent()
-        print(frame)
+        #print(frame)
         if 'data' in frame and frame['data'].isValue:
             tm_data = frame['data'].prettyPrint()[2:]
         else:
@@ -411,6 +412,7 @@ class RCF(common.SLE):
             return
 
         tmf = frames.TMTransFrame(tm_data)
+        print(tm_data)
         print_dict(tmf, True)
         #ait.core.log.info('Sending {} bytes to telemetry port'.format(len(tmf._data[0])))
         #self._telem_sock.sendto(tmf._data[0], ('localhost', 3076))
@@ -481,7 +483,7 @@ class RCF(common.SLE):
         report += 'Subcarrier Lock Status: {}\n'.format(lock_status[pdu['subcarrierLockStatus']])
 
         carrier_lock_status = ['In Lock', 'Out of Lock', 'Unknown']
-        report += 'Carrier Lock Status: {}\n'.format(lock_status[pdu['carrierLockStatus']])
+        report += 'Carrier Lock Status: {}\n'.format(carrier_lock_status[pdu['carrierLockStatus']])
 
         production_status = ['Running', 'Interrupted', 'Halted']
         report += 'Production Status: {}'.format(production_status[pdu['productionStatus']])
